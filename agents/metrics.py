@@ -1,7 +1,6 @@
 """
 Prometheus Operational Metrics Exporter for rt-estimator.
 """
-import time
 from typing import Dict, Any
 
 class SystemMetricsCollector:
@@ -32,29 +31,29 @@ class SystemMetricsCollector:
 
     def export_prometheus_text(self) -> str:
         avg_latency = self.processing_latency_sum / max(1, self.tasks_total)
-        sys_lbl = self.system_name
+        sys_label = self.system_name
         p_lines = [
             "# HELP system_tasks_total Total count of distributed component tasks processed",
             "# TYPE system_tasks_total counter",
-            f'system_tasks_total{{system="{sys_lbl}"}} {self.tasks_total}',
+            f'system_tasks_total{{system="{sys_label}"}} {self.tasks_total}',
             "",
             "# HELP alerts_triggered_total Total count of alerts by urgency tier",
             "# TYPE alerts_triggered_total counter",
-            f'alerts_triggered_total{{system="{sys_lbl}",urgency="CRITICAL_STAT"}} {self.critical_alerts_total}',
-            f'alerts_triggered_total{{system="{sys_lbl}",urgency="ELEVATED_RISK"}} {self.elevated_alerts_total}',
-            f'alerts_triggered_total{{system="{sys_lbl}",urgency="ROUTINE"}} {self.routine_tasks_total}',
+            f'alerts_triggered_total{{system="{sys_label}",urgency="CRITICAL_STAT"}} {self.critical_alerts_total}',
+            f'alerts_triggered_total{{system="{sys_label}",urgency="ELEVATED_RISK"}} {self.elevated_alerts_total}',
+            f'alerts_triggered_total{{system="{sys_label}",urgency="ROUTINE"}} {self.routine_tasks_total}',
             "",
             "# HELP phi_outbound_blocks_total Total PHI outbound guard blocks",
             "# TYPE phi_outbound_blocks_total counter",
-            f'phi_outbound_blocks_total{{system="{sys_lbl}"}} {self.phi_blocks_total}',
+            f'phi_outbound_blocks_total{{system="{sys_label}"}} {self.phi_blocks_total}',
             "",
             "# HELP audit_chain_blocks_total Total HMAC-SHA256 audit blocks signed",
             "# TYPE audit_chain_blocks_total counter",
-            f'audit_chain_blocks_total{{system="{sys_lbl}"}} {self.audit_blocks_total}',
+            f'audit_chain_blocks_total{{system="{sys_label}"}} {self.audit_blocks_total}',
             "",
             "# HELP task_processing_duration_avg_seconds Average task evaluation latency",
             "# TYPE task_processing_duration_avg_seconds gauge",
-            f'task_processing_duration_avg_seconds{{system="{sys_lbl}"}} {avg_latency:.4f}',
+            f'task_processing_duration_avg_seconds{{system="{sys_label}"}} {avg_latency:.4f}',
             ""
         ]
         return "\n".join(p_lines)

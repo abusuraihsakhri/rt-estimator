@@ -98,6 +98,9 @@ def load_serial_interval_distribution(path: str) -> np.ndarray:
     single-column CSV), giving w(0), w(1), w(2), ... The array is
     normalized so it sums to 1.
     """
+    import os
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"serial interval file not found: {path}")
     values = []
     with open(path, newline="") as f:
         reader = csv.reader(f)
@@ -256,6 +259,9 @@ def load_incidence_csv(path: str):
     "date" column. If no date column is present, dates are returned as
     None and day indices are used instead.
     """
+    import os
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"incidence CSV file not found: {path}")
     dates = []
     cases = []
     with open(path, newline="") as f:
