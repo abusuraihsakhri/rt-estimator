@@ -106,12 +106,16 @@ def load_serial_interval_distribution(path: str) -> np.ndarray:
     values = []
     with open(path, newline="") as f:
         reader = csv.reader(f)
-        for row in reader:
+        for line, row in enumerate(reader, start=1):
             if not row:
                 continue
+            if len(row) != 1:
+                raise ValueError(f"serial interval row {line} must have exactly one column")
             cell = row[0].strip()
-            if cell == "" or not _is_float(cell):
-                continue
+            if not _is_float(cell):
+                if line == 1 and cell:
+                    continue  # optional single-column header
+                raise ValueError(f"invalid serial interval weight on row {line}: {cell!r}")
             values.append(float(cell))
     if not values:
         raise ValueError(f"no numeric values found in serial interval file: {path}")
