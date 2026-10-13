@@ -1,214 +1,68 @@
 # Rt Estimator
 
-<div align="center">
+Estimate the time-varying effective reproduction number (Rt) from daily incidence using the renewal-equation method of Cori et al. (2013).
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+This repository includes the scientific Python CLI, a static browser calculator in the web/ directory, and a separate FastAPI task-auditing demonstration retained for compatibility.
 
-</div>
+## Browser calculator
 
----
+The browser app uses local JavaScript and requires no backend, Python runtime, API key, external packages or data upload. From the repository root, run:
 
-## Overview
+    python -m http.server 8080 --directory web
 
-Estimates the real-time effective reproduction number (Rt) from a daily case
-incidence time series, using the renewal-equation method of Cori et al.
-(2013), "A New Framework and Software to Estimate Time-Varying Reproduction
-Numbers During Epidemics" (American Journal of Epidemiology).
+Then open http://localhost:8080/. Load the synthetic example or a CSV containing a cases, incidence or count column and, optionally, a date column. Each row represents one consecutive day, including zero-case days. Select serial interval mean and SD, estimation window, Gamma prior and optional trailing moving-average smoothing. Select Calculate Rt to view estimates and download the results.
 
-### Method Summary
+A GitHub Pages deployment workflow is included in .github/workflows/pages.yml. Configure repository Pages to use GitHub Actions as its deployment source. The live link should only be advertised after the actual deployment has been verified.
 
-Given daily incidence I_t and a discrete serial interval distribution w(s)
-(the probability that the interval between the onset of a primary and a
-secondary case is s days), the total infectiousness at time t is
+## Python installation and use
 
-    Lambda_t = sum_{s=1}^{W} w(s) * I_{t-s}
+Requires Python 3.10 or later.
 
-Assuming case counts in a sliding window of tau days follow a Poisson
-process with rate R * Lambda_t, and placing a Gamma(a, b) prior on R
-(shape a, rate b), the posterior distribution of R over the window
-[t - tau + 1, t] is exactly
+    python -m pip install -r requirements.txt
+    python rt_estimator.py --input sample_data/cases.csv --output rt_results.csv
+    python rt_estimator.py --input sample_data/cases.csv --si-mean 4.7 --si-sd 2.9 --window 7 --smooth --plot rt_plot.png
 
-    R | window ~ Gamma(a + sum(I), 1 / (1/b + sum(Lambda)))
+Options: --input (required), --output (default rt_estimates.csv), --window (default 7), --si-mean (4.7), --si-sd (2.9), --si-distr (custom discrete serial interval CSV), --prior-mean (5), --prior-sd (5), --smooth, --smooth-window (7), and --plot.
 
-This module implements that estimator, a standard discretization of a
-Gamma-distributed serial interval, optional 7-day moving-average smoothing
-of noisy case counts, and CSV/plot output.
+The input CSV must have a header with cases, incidence or count. Counts must be finite and non-negative. Optional dates are copied to the output without checking daily continuity. Custom serial interval weights are supplied one per line beginning with w(0)=0, with positive mass at later lags.
 
----
+Given daily incidence I(t), the infectiousness Lambda(t) is the sum over positive lags s of w(s) * I(t-s). The Gamma posterior has shape a + sum(I) and rate b + sum(Lambda), with a=(prior mean/prior SD)^2 and b=prior mean/(prior SD)^2. Results include posterior mean and equal-tailed 95% credible intervals.
 
-## Installation
+### Methodological limitations
 
-```bash
-# Clone the repository
-git clone https://github.com/abusuraihsakhri/rt-estimator.git
-cd rt-estimator
+Estimates assume the specified, fixed serial interval, a renewal model, a Gamma prior and Poisson observations conditional on Rt. Reporting delays, missing observations, imported cases and changes in testing can bias estimates. Smoothing fractionalizes counts and makes the posterior an approximation to the count model. These results are research/educational estimates, not a live surveillance feed or clinical advice.
 
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+## Separate audit demonstration
 
-# Install dependencies
-pip install -r requirements.txt
-```
+The agents/ and enrichment.py modules implement a generic task-auditing demonstration, not epidemiological Rt estimation. Existing interfaces are retained:
 
----
+    python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
+    python cli.py batch -i input.csv -o results.csv
+    python cli.py verify-audit
+    python cli.py serve --host 127.0.0.1 --port 8000
 
-## Usage
+The FastAPI service exposes GET /health, GET /metrics (JSON), POST /api/audit, POST /api/chat, and GET /api/audit/logs.
 
-### Core Rt Estimation (CLI)
+**Security warning:** The audit API is unauthenticated and not suitable for an untrusted network. Its regex identifier checks do not establish safe de-identification or HIPAA compliance. HMAC-signed audit logs are held in memory; verification detects mutation of retained blocks but cannot prove the completeness of persisted audit history. Do not send patient-identifiable data.
 
-Estimate Rt from a CSV file containing daily case counts:
+The Docker Compose service binds port 8000 to localhost only and requires AUDIT_SECRET_KEY to be set, for example using a random 32-byte hexadecimal secret, before starting.
 
-```bash
-# Basic usage with default parameters
-python rt_estimator.py --input sample_data/cases.csv
+## Tests and development
 
-# With custom serial interval and output file
-python rt_estimator.py --input sample_data/cases.csv \
-    --output rt_results.csv \
-    --si-mean 4.7 --si-sd 2.9 \
-    --window 7 \
-    --smooth \
-    --plot rt_plot.png
-```
+    python -m pytest -q
+    node --test web/*.test.mjs
+    python -m compileall -q agents rt_estimator.py cli.py enrichment.py simulator.py
 
-### CLI Parameters
+CI runs Python 3.10, 3.11 and 3.12. Browser numerical tests use SciPy-computed reference values. The scientific Python CLI requires NumPy and SciPy; Matplotlib is used for optional plotting. The audit demonstration uses FastAPI, Pydantic and Uvicorn.
 
-| Parameter | Description | Default |
-|:----------|:------------|:--------|
-| `--input` | CSV file with a 'cases' column and optional 'date' column | Required |
-| `--output` | Output CSV path | `rt_estimates.csv` |
-| `--window` | Sliding window width in days | 7 |
-| `--si-mean` | Serial interval mean in days | 4.7 |
-| `--si-sd` | Serial interval standard deviation in days | 2.9 |
-| `--si-distr` | Path to custom discrete serial interval distribution file | None |
-| `--prior-mean` | Gamma prior mean for Rt | 5.0 |
-| `--prior-sd` | Gamma prior standard deviation for Rt | 5.0 |
-| `--smooth` | Apply 7-day moving average to case counts | False |
-| `--smooth-window` | Moving-average window in days | 7 |
-| `--plot` | Path to save a PNG plot of incidence and Rt | None |
+## Privacy and compatibility
 
-### Input CSV Format
+Browser calculations are performed locally: no upload, cookies, analytics, external APIs or persistent browser storage. CSV is downloaded only on request. The app uses modern JavaScript modules supported by current Chrome, Firefox, Safari and Edge. GitHub Pages can host the browser app; the Python CLI and FastAPI server require a Python environment. Pyodide is unnecessary because the browser estimator is implemented in JavaScript.
 
-The input CSV file should contain a header row with at least one of the
-following case-count columns (case-insensitive): `cases`, `incidence`, or
-`count`. An optional `date` column can be included.
+## Reference
 
-Example:
-```csv
-date,cases
-2026-06-01,5
-2026-06-02,6
-2026-06-03,8
-```
-
-### Enterprise CLI (Multi-Agent System)
-
-The project also includes an enterprise multi-agent system with PHI protection:
-
-```bash
-# Run a single task evaluation
-python cli.py audit --task-id TASK-001 --primary 28.5 --secondary 14.2
-
-# Batch process CSV records
-python cli.py batch -i input.csv -o results.csv
-
-# Verify HMAC audit trail integrity
-python cli.py verify-audit
-
-# Launch FastAPI REST server
-python cli.py serve --host 127.0.0.1 --port 8000
-```
-
----
-
-## API Server
-
-The FastAPI server exposes the following endpoints:
-
-| Endpoint | Method | Description |
-|:---------|:-------|:------------|
-| `/health` | GET | Health check |
-| `/metrics` | GET | Prometheus-compatible metrics |
-| `/api/audit` | POST | Submit a task for evaluation |
-| `/api/chat` | POST | Query the supervisory chat |
-| `/api/audit/logs` | GET | Retrieve audit trail |
-
----
-
-## Security Features
-
-* **Zero-PHI Outbound Guard:** Regex-based detection and blocking of SSNs, MRNs, phone numbers, emails, and patient identifiers in outbound data.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Configurable Audit Secret:** Set `AUDIT_SECRET_KEY` environment variable for production deployments.
-
----
-
-## Testing
-
-Run the automated test suite:
-
-```bash
-pytest -v
-```
-
-Run the core algorithm tests directly:
-
-```bash
-python test_rt_estimator.py
-```
-
----
-
-## Docker Deployment
-
-```bash
-# Build the container
-docker build -t rt-estimator .
-
-# Run with environment variables
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key rt-estimator
-
-# Or use docker-compose
-AUDIT_SECRET_KEY=your-secret-key docker-compose up
-```
-
----
-
-## Project Structure
-
-```
-rt-estimator/
-├── rt_estimator.py      # Core Rt estimation algorithm
-├── cli.py               # Enterprise CLI with multi-agent system
-├── test_rt_estimator.py # Core algorithm tests
-├── simulator.py         # High-throughput simulation
-├── enrichment.py        # Feature enrichment engines
-├── requirements.txt     # Python dependencies
-├── Dockerfile           # Container build
-├── docker-compose.yml   # Container orchestration
-├── sample_data/         # Sample case data
-├── agents/              # Multi-agent system modules
-│   ├── base.py          # Security, PHI guard, audit trail
-│   ├── models.py        # Pydantic data models
-│   ├── supervisor.py    # Supervisor orchestrator
-│   ├── workers.py       # Specialized worker agents
-│   ├── api.py           # FastAPI endpoints
-│   ├── metrics.py       # Prometheus metrics
-│   ├── learning.py      # Bayesian calibration engine
-│   ├── llm_factory.py   # LLM provider factory
-│   └── streamer.py      # WebSocket telemetry
-├── tests/               # Test suite
-└── web/                 # Web dashboard
-```
-
----
+Cori A, Ferguson NM, Fraser C, Cauchemez S. A new framework and software to estimate time-varying reproduction numbers during epidemics. American Journal of Epidemiology. 2013;178(9):1505–1512. doi:10.1093/aje/kwt133.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT. See LICENSE.

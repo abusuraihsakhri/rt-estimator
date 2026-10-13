@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Rt Estimator API",
-    "description": "Enterprise Distributed Component Platform (Clinical & Cryptographic AI) adhering to CAP / CLSI / NIST Standards.",
+    "description": "Local demonstration API for generic task audits. Does not expose the epidemiological Rt estimator.",
     "version": "3.0.0-ENTERPRISE",
     "contact": {
       "name": "Dr. Abu Suraih Sakhri",
@@ -22,10 +22,10 @@
     },
     "/metrics": {
       "get": {
-        "summary": "Prometheus operational metrics",
+        "summary": "JSON operational counters",
         "responses": {
           "200": {
-            "description": "Prometheus text metrics"
+            "description": "JSON counters and nominal status"
           }
         }
       }
@@ -76,7 +76,7 @@
     },
     "/api/chat": {
       "post": {
-        "summary": "Air-gapped supervisory conversational assistant",
+        "summary": "Return a deterministic mock response (no external model inference)",
         "requestBody": {
           "content": {
             "application/json": {

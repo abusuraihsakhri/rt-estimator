@@ -130,3 +130,43 @@ if __name__ == "__main__":
     if failures:
         raise SystemExit(f"{failures} test(s) failed")
     print(f"All {len(tests)} tests passed.")
+
+
+def test_reject_invalid_incidence_and_serial_interval():
+    import pytest
+    for invalid in ([2, float("nan")], [1, float("inf")], [-1, 4]):
+        with pytest.raises(ValueError):
+            estimate_rt(invalid, [0, 1], window=1)
+    for invalid in ([0, float("nan")], [0.2, 0.8], [0, 1.5], [0, -1]):
+        with pytest.raises(ValueError):
+            estimate_rt([1, 2, 3], invalid, window=2)
+
+
+def test_discretization_rejects_nonfinite_parameters():
+    import pytest
+    with pytest.raises(ValueError):
+        discretize_serial_interval(float("nan"), 2)
+    with pytest.raises(ValueError):
+        discretize_serial_interval(4, float("inf"))
+
+
+def test_csv_export_escapes_spreadsheet_formula(tmp_path):
+    from rt_estimator import RtEstimate, write_rt_csv
+    import csv
+    dest = tmp_path / "out.csv"
+    row = RtEstimate(0, 1, 1.0, 0.5, 1.5, 2.0, 2.0)
+    write_rt_csv(str(dest), [row], dates=["date", "=HYPERLINK(1)"])
+    with dest.open(newline="") as handle:
+        records = list(csv.DictReader(handle))
+    assert records[0]["date"].startswith("'=")
+
+
+def test_custom_serial_interval_rejects_corrupt_rows(tmp_path):
+    from rt_estimator import load_serial_interval_distribution
+    import pytest
+    source = tmp_path / "si.csv"
+    source.write_text("weight\n0\nnot-a-weight\n1\n")
+    with pytest.raises(ValueError):
+        load_serial_interval_distribution(str(source))
+    source.write_text("weight\n0\n1\n")
+    assert abs(load_serial_interval_distribution(str(source))[1] - 1.0) < 1e-12
