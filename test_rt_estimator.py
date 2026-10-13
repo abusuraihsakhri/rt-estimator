@@ -165,8 +165,8 @@ def test_custom_serial_interval_rejects_corrupt_rows(tmp_path):
     from rt_estimator import load_serial_interval_distribution
     import pytest
     source = tmp_path / "si.csv"
-    source.write_text("weight\\n0\\nnot-a-weight\\n1\\n".replace("\\\\n", "\\n"))
+    source.write_text("weight\n0\nnot-a-weight\n1\n")
     with pytest.raises(ValueError):
         load_serial_interval_distribution(str(source))
-    source.write_text("weight\\n0\\n1\\n".replace("\\\\n", "\\n"))
+    source.write_text("weight\n0\n1\n")
     assert abs(load_serial_interval_distribution(str(source))[1] - 1.0) < 1e-12
