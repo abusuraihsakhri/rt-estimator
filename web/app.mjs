@@ -104,7 +104,11 @@ get('example').addEventListener('click',()=>{
 get('download').addEventListener('click',()=>{
   if (!last) return;
   const lines=['t_start,t_end,date,mean_r,ci_low_95,ci_high_95,sum_incidence,sum_infectiousness'];
-  function cell(s) {return '"'+String(s).replaceAll('"','""')+'"';}
+  function cell(s) {
+    const value = String(s);
+    const safe = /^\s*[=+\-@]/.test(value) ? "'" + value : value;
+    return '"' + safe.replaceAll('"', '""') + '"';
+  }
   for (const r of last.results) lines.push([
     r.tStart,r.tEnd,cell(last.dates[r.tEnd]),r.mean,r.low,r.high,r.sumIncidence,r.sumInfectiousness,
   ].join(','));

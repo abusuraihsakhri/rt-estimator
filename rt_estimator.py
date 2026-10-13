@@ -321,7 +321,9 @@ def write_rt_csv(path: str, estimates: list[RtEstimate], dates=None):
         for e in estimates:
             date_str = ""
             if dates is not None and e.t_end < len(dates) and dates[e.t_end] is not None:
-                date_str = dates[e.t_end]
+                date_str = str(dates[e.t_end])
+                if date_str.lstrip().startswith(("=", "+", "-", "@")):
+                    date_str = "'" + date_str
             writer.writerow(
                 [
                     e.t_start,

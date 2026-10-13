@@ -148,3 +148,14 @@ def test_discretization_rejects_nonfinite_parameters():
         discretize_serial_interval(float("nan"), 2)
     with pytest.raises(ValueError):
         discretize_serial_interval(4, float("inf"))
+
+
+def test_csv_export_escapes_spreadsheet_formula(tmp_path):
+    from rt_estimator import RtEstimate, write_rt_csv
+    import csv
+    dest = tmp_path / "out.csv"
+    row = RtEstimate(0, 1, 1.0, 0.5, 1.5, 2.0, 2.0)
+    write_rt_csv(str(dest), [row], dates=["date", "=HYPERLINK(1)"])
+    with dest.open(newline="") as handle:
+        records = list(csv.DictReader(handle))
+    assert records[0]["date"].startswith("'=")
