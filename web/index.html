@@ -1,236 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rt Estimator — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Estimate the effective reproduction number from daily incidence using the Cori renewal-equation method. Data stays in your browser.">
+  <title>Rt Estimator — Incidence & transmission</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#152136;--line:#31435c;--text:#edf4fa;--sub:#b8c8db;--blue:#76bbfa;--yellow:#f5c777;--red:#ff9c9c}
+    *{box-sizing:border-box}html{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+    body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}main{max-width:1160px;margin:auto;padding:24px 20px 64px}
+    h1{font-size:clamp(1.75rem,3vw,2.45rem);margin:0 0 8px}h2{font-size:1.22rem;margin:0 0 14px}
+    p{margin:8px 0 12px}.muted{color:var(--sub)}.lead{max-width:740px}
+    a{color:var(--blue)}a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:24px;border-bottom:1px solid var(--line);padding-bottom:22px}
+    .pill{border:1px solid var(--blue);color:var(--blue);border-radius:100px;padding:6px 12px;font-size:.82rem;white-space:nowrap}
+    .layout{display:grid;grid-template-columns:minmax(300px,.95fr) minmax(300px,1.2fr);gap:18px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;min-width:0}
+    label{font-size:.91rem;font-weight:600;display:block;margin-bottom:6px}
+    input,textarea{width:100%;border:1px solid #647892;border-radius:7px;color:var(--text);background:var(--bg);padding:10px 12px;font:inherit}
+    textarea{min-height:200px;resize:vertical;white-space:pre;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.83rem}
+    input[type=file]{font-size:.82rem;padding:7px}input[type=checkbox]{width:auto;margin-right:7px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+    .checkline{display:flex;align-items:center;gap:6px;margin:16px 0}.checkline label{margin:0;font-weight:400}
+    button{cursor:pointer;font:inherit;font-weight:650;padding:11px 17px;border:1px solid var(--blue);border-radius:8px;background:#2768ac;color:#fff}
+    button:hover{background:#357fc9}.secondary{background:transparent;color:var(--blue)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.small{font-size:.83rem}
+    .note{font-size:.88rem;color:var(--sub);margin-top:15px}
+    .error{color:#271015;background:#ffb8bb;border-radius:8px;padding:10px 12px;margin:14px 0}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .stat{background:var(--bg);border-radius:8px;border:1px solid var(--line);padding:11px}
+    .stat strong{font-size:1.5rem;display:block}.stat span{color:var(--sub);font-size:.81rem}
+    .chartbox{margin:20px 0 12px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+    svg{display:block;width:100%;min-width:270px;max-height:320px}
+    .results{max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+    table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:.84rem;font-variant-numeric:tabular-nums}
+    th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+    th{position:sticky;top:0;background:#223650;color:var(--text)}tbody tr:nth-child(2n){background:#1b2a42}
+    .disclaimer{margin-top:24px;border-left:3px solid var(--yellow);padding:6px 18px;color:var(--sub)}
+    [hidden]{display:none!important}@media(max-width:850px){.layout{grid-template-columns:1fr}.panel{padding:18px}}@media(max-width:420px){.stats{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Rt Estimator</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
+<main>
+  <header>
+    <div>
+      <h1>Rt Estimator</h1>
+      <p class="lead muted">Estimate the time-varying effective reproduction number from daily case incidence using the Cori et al. (2013) renewal equation and Gamma posterior.</p>
     </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
+    <div class="pill">Local browser processing</div>
+  </header>
+  <div class="layout">
+    <section class="panel" aria-labelledby="data-heading">
+      <h2 id="data-heading">1. Incidence and assumptions</h2>
+      <label for="csvfile">Import CSV file (optional)</label>
+      <input id="csvfile" type="file" accept=".csv,text/csv">
+      <p class="small muted">Requires a <code>cases</code>, <code>incidence</code> or <code>count</code> column, optionally <code>date</code>. One row per consecutive day, including zero-case days.</p>
+      <label for="csv">Daily incidence CSV</label>
+      <textarea id="csv" spellcheck="false" aria-describedby="csv-help" placeholder="date,cases&#10;2026-01-01,10&#10;2026-01-02,12"></textarea>
+      <p id="csv-help" class="small muted">Synthetic example available below. Maximum 5,000 observations.</p>
+      <div class="actions"><button id="example" type="button" class="secondary">Load synthetic example</button></div>
+      <div class="form-grid">
+        <div><label for="siMean">Serial interval mean (days)</label><input id="siMean" type="number" min="1.01" max="60" step="0.1" value="4.7" required></div>
+        <div><label for="siSd">Serial interval SD (days)</label><input id="siSd" type="number" min="0.1" max="30" step="0.1" value="2.9" required></div>
+        <div><label for="window">Rt estimation window (days)</label><input id="window" type="number" min="1" max="365" step="1" value="7" required></div>
+        <div><label for="priorMean">Prior Rt mean</label><input id="priorMean" type="number" min="0.01" step="0.1" value="5" required></div>
+        <div><label for="priorSd">Prior Rt SD</label><input id="priorSd" type="number" min="0.01" step="0.1" value="5" required></div>
+        <div><label for="smoothWindow">Smoothing window (days)</label><input id="smoothWindow" type="number" min="1" step="1" value="7" required></div>
+      </div>
+      <div class="checkline"><input type="checkbox" id="smooth"><label for="smooth">Apply trailing moving-average smoothing before estimation</label></div>
+      <button id="calculate" type="button">Calculate Rt</button>
+      <p class="note">A Gamma-distributed non-negative serial interval is discretized with w(0) = 0. Smoothing creates fractional incidence; posterior intervals then reflect the stated model approximation.</p>
+    </section>
+    <section class="panel" aria-labelledby="output-heading">
+      <h2 id="output-heading">2. Rt estimates</h2>
+      <p id="status" class="muted" role="status" aria-live="polite">Load an example or enter incidence data, then select Calculate Rt.</p>
+      <div id="error" class="error" role="alert" hidden></div>
+      <div id="report" hidden>
+        <div class="stats">
+          <div class="stat"><strong id="latest">—</strong><span>Latest posterior mean Rt</span></div>
+          <div class="stat"><strong id="interval">—</strong><span>95% credible interval</span></div>
+          <div class="stat"><strong id="days">—</strong><span>Estimable windows</span></div>
         </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
+        <div class="chartbox"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Posterior mean Rt with 95 percent credible band and reference at Rt equals one"></svg></div>
+        <p class="small muted">Blue: posterior mean. Shaded band: 95% credible interval. Dashed line: Rt = 1. Intervals quantify posterior model uncertainty, not uncertainty in reported case counts or serial-interval parameters.</p>
+        <div class="actions"><button type="button" id="download">Download results CSV</button></div>
+        <div class="results" tabindex="0" aria-label="Rt results table">
+          <table><thead><tr><th>Day / date</th><th>Rt mean</th><th>2.5%</th><th>97.5%</th></tr></thead><tbody id="rows"></tbody></table>
         </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Rt Estimator Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "rt-estimator",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
-        }
-    </script>
+      </div>
+    </section>
+  </div>
+  <section class="disclaimer">
+    <p><strong>Methodological limitations.</strong> Rt estimates depend on the supplied incidence, serial interval, prior and smoothing choices. Reporting delays, missing dates, changes in testing, imported cases and near-zero infectiousness may bias interpretation. Results are for research and educational use, not individual clinical decisions.</p>
+    <p class="small">All case data and computations remain in this browser. No uploads, cookies, analytics or external APIs are used. See the <a href="https://github.com/abusuraihsakhri/rt-estimator">source repository</a> for the Python CLI and API.</p>
+  </section>
+</main>
+<script type="module" src="./app.mjs"></script>
 </body>
 </html>
