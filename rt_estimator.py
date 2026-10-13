@@ -404,20 +404,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv=None):
     args = build_arg_parser().parse_args(argv)
 
-    dates, incidence = load_incidence_csv(args.input)
-
-    if args.si_distr:
-        si = load_serial_interval_distribution(args.si_distr)
-    else:
-        si = discretize_serial_interval(args.si_mean, args.si_sd)
-
-    smoothed = None
-    estimation_input = incidence
-    if args.smooth:
-        smoothed = moving_average(incidence, window=args.smooth_window)
-        estimation_input = smoothed
-
     try:
+        dates, incidence = load_incidence_csv(args.input)
+        si = (load_serial_interval_distribution(args.si_distr) if args.si_distr
+              else discretize_serial_interval(args.si_mean, args.si_sd))
+        smoothed = moving_average(incidence, window=args.smooth_window) if args.smooth else None
+        estimation_input = smoothed if smoothed is not None else incidence
         estimates = estimate_rt(
             estimation_input,
             si,
@@ -425,7 +417,7 @@ def main(argv=None):
             prior_mean=args.prior_mean,
             prior_sd=args.prior_sd,
         )
-    except ValueError as exc:
+    except (ValueError, FileNotFoundError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

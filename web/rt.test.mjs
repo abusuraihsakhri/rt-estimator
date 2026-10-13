@@ -5,7 +5,7 @@ import { gammaCdf, gammaQuantile, discretizeSerialInterval, estimateRt, parseInc
 test('gamma CDF and inverse agree with analytic exponential and known values', () => {
   assert.ok(Math.abs(gammaCdf(1, 1) - (1 - Math.exp(-1))) < 1e-11);
   assert.ok(Math.abs(gammaQuantile(0.5, 1) - Math.log(2)) < 1e-10);
-  assert.ok(Math.abs(gammaQuantile(0.975, 2, 3) - 16.714197119) < 0.00001);
+  assert.ok(Math.abs(gammaQuantile(0.975, 2, 3) - 16.7149301728) < 0.00001);
 });
 
 test('serial interval discretization is normalized and agrees with Python implementation', () => {
@@ -41,4 +41,15 @@ test('causal smoothing and CSV handling', () => {
   assert.throws(() => parseIncidenceCsv('cases\n1\nNaN'));
   assert.throws(() => parseIncidenceCsv('cases\n1\n'));
   assert.throws(() => parseIncidenceCsv('cases\n1\n-2'));
+});
+
+test('browser posterior matches independent SciPy reference values', () => {
+  const si = discretizeSerialInterval(4.7, 2.9);
+  assert.ok(Math.abs(si[1] - 0.05650093) < 2e-7);
+  assert.ok(Math.abs(si[2] - 0.17807472) < 2e-7);
+  const x = [10,12,11,13,14,20,18,21,23,22,27,30,28,25,29,31,33,35,34,35];
+  const final = estimateRt(x).results.at(-1);
+  assert.ok(Math.abs(final.mean - 1.1991399278771875) < 2e-6);
+  assert.ok(Math.abs(final.low - 1.0469074916220034) < 2e-6);
+  assert.ok(Math.abs(final.high - 1.3615553428548552) < 2e-6);
 });
