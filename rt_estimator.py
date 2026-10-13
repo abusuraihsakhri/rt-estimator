@@ -59,17 +59,19 @@ def discretize_serial_interval(mean: float, sd: float, max_days: int | None = No
     Returns an array w of length max_days+1 where w[0] == 0 (no
     zero-day serial interval) and w[1:] sums to 1.
     """
-    if mean <= 1:
-        raise ValueError("serial interval mean must be > 1 day")
-    if sd <= 0:
-        raise ValueError("serial interval sd must be > 0")
+    if not np.isfinite(mean) or mean <= 1:
+        raise ValueError("serial interval mean must be finite and > 1 day")
+    if not np.isfinite(sd) or sd <= 0:
+        raise ValueError("serial interval sd must be finite and > 0")
 
     shape = ((mean - 1) / sd) ** 2
     scale = (sd ** 2) / (mean - 1)
 
     if max_days is None:
         max_days = int(np.ceil(mean + 10 * sd))
-    max_days = max(int(max_days), 1)
+    if not np.isfinite(max_days) or max_days < 1:
+        raise ValueError("max_days must be a finite positive integer")
+    max_days = int(max_days)
 
     ks = np.arange(0, max_days + 1, dtype=float)
 
@@ -114,8 +116,10 @@ def load_serial_interval_distribution(path: str) -> np.ndarray:
     if not values:
         raise ValueError(f"no numeric values found in serial interval file: {path}")
     w = np.array(values, dtype=float)
-    if np.any(w < 0):
-        raise ValueError("serial interval distribution values must be non-negative")
+    if not np.all(np.isfinite(w)) or np.any(w < 0):
+        raise ValueError("serial interval distribution values must be finite and non-negative")
+    if len(w) < 2 or w[0] != 0:
+        raise ValueError("serial interval requires w(0)=0 and at least one positive-lag value")
     total = w.sum()
     if total <= 0:
         raise ValueError("serial interval distribution must sum to a positive value")
@@ -141,6 +145,8 @@ def moving_average(x, window: int = 7) -> np.ndarray:
     data without looking into the future.
     """
     x = np.asarray(x, dtype=float)
+    if x.ndim != 1 or not np.all(np.isfinite(x)):
+        raise ValueError("input must be a one-dimensional series of finite values")
     if window < 1:
         raise ValueError("window must be >= 1")
     out = np.zeros_like(x)
@@ -162,6 +168,12 @@ def compute_infectiousness(incidence, si_distr) -> np.ndarray:
     """
     incidence = np.asarray(incidence, dtype=float)
     si = np.asarray(si_distr, dtype=float)
+    if incidence.ndim != 1 or not np.all(np.isfinite(incidence)) or np.any(incidence < 0):
+        raise ValueError("incidence must be a one-dimensional series of finite non-negative values")
+    if si.ndim != 1 or len(si) < 2 or not np.all(np.isfinite(si)) or np.any(si < 0):
+        raise ValueError("serial interval must contain finite non-negative weights for w(0), w(1), ...")
+    if si[0] != 0 or not np.isclose(si.sum(), 1.0, rtol=0, atol=1e-8):
+        raise ValueError("serial interval requires w(0)=0 and weights summing to 1")
     T = len(incidence)
     W = len(si)
     lam = np.zeros(T)
@@ -207,8 +219,8 @@ def estimate_rt(
         raise ValueError(
             f"incidence series has only {T} points, shorter than window={window}"
         )
-    if prior_mean <= 0 or prior_sd <= 0:
-        raise ValueError("prior mean and sd must be positive")
+    if not np.isfinite(prior_mean) or not np.isfinite(prior_sd) or prior_mean <= 0 or prior_sd <= 0:
+        raise ValueError("prior mean and sd must be finite and positive")
 
     lam = compute_infectiousness(incidence, si_distr)
 
@@ -268,7 +280,7 @@ def load_incidence_csv(path: str):
         reader = csv.DictReader(f)
         if reader.fieldnames is None:
             raise ValueError(f"could not read a header row from {path}")
-        lower_map = {name.lower().strip(): name for name in reader.fieldnames}
+        lower_map = {name.lower().strip(): name for name in reader.fieldnames if name is not None}
 
         case_col = None
         for candidate in ("cases", "incidence", "count"):
@@ -281,12 +293,18 @@ def load_incidence_csv(path: str):
             )
         date_col = lower_map.get("date")
 
-        for row in reader:
+        for line, row in enumerate(reader, start=2):
             raw = row[case_col]
             if raw is None or raw.strip() == "":
-                continue
-            cases.append(float(raw))
-            dates.append(row[date_col].strip() if date_col else None)
+                raise ValueError(f"missing incidence value on CSV row {line}")
+            try:
+                value = float(raw)
+            except ValueError as exc:
+                raise ValueError(f"invalid incidence value on CSV row {line}: {raw!r}") from exc
+            if not np.isfinite(value) or value < 0:
+                raise ValueError(f"incidence must be finite and non-negative on CSV row {line}")
+            cases.append(value)
+            dates.append((row.get(date_col) or "").strip() if date_col else None)
 
     if not cases:
         raise ValueError(f"no case count rows found in {path}")

@@ -130,3 +130,21 @@ if __name__ == "__main__":
     if failures:
         raise SystemExit(f"{failures} test(s) failed")
     print(f"All {len(tests)} tests passed.")
+
+
+def test_reject_invalid_incidence_and_serial_interval():
+    import pytest
+    for invalid in ([2, float("nan")], [1, float("inf")], [-1, 4]):
+        with pytest.raises(ValueError):
+            estimate_rt(invalid, [0, 1], window=1)
+    for invalid in ([0, float("nan")], [0.2, 0.8], [0, 1.5], [0, -1]):
+        with pytest.raises(ValueError):
+            estimate_rt([1, 2, 3], invalid, window=2)
+
+
+def test_discretization_rejects_nonfinite_parameters():
+    import pytest
+    with pytest.raises(ValueError):
+        discretize_serial_interval(float("nan"), 2)
+    with pytest.raises(ValueError):
+        discretize_serial_interval(4, float("inf"))
